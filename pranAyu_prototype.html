@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PranAyu - Telemedicine Prototype</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin: 20px auto;
+      max-width: 400px;
+    }
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #4CAF50;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .output {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌿 PranAyu</h1>
+  <div class="card">
+    <h2>Voice Symptom Input</h2>
+    <button onclick="startRecognition()">🎤 Speak Symptom</button>
+    <p id="symptomText">Say your symptom...</p>
+  </div>
+
+  <div class="card" id="remedyCard" style="display:none;">
+    <h2>Suggested Remedy</h2>
+    <p id="remedyText"></p>
+    <button onclick="logDuration(1)">Symptom Day 1</button>
+    <button onclick="logDuration(2)">Symptom Day 2</button>
+    <button onclick="logDuration(3)">3+ Days</button>
+  </div>
+
+  <div class="card" id="pharmacyCard" style="display:none;">
+    <h2>Pharmacy Availability</h2>
+    <p id="medicineText"></p>
+    <ul id="pharmacyList"></ul>
+    <button onclick="alert('Connecting to doctor... (demo)')">👨‍⚕️ Consult Doctor</button>
+  </div>
+
+  <script>
+    const remedies = {
+      "cough": {
+        remedy: "Drink warm turmeric milk and ginger tea twice daily.",
+        medicine: "Cough Syrup"
+      },
+      "fever": {
+        remedy: "Drink tulsi and ginger tea, sponge body with lukewarm water.",
+        medicine: "Paracetamol"
+      },
+      "headache": {
+        remedy: "Apply clove oil on forehead and drink ginger tea.",
+        medicine: "Ibuprofen"
+      }
+    };
+
+    const pharmacies = [
+      { name: "Sharma Pharmacy", distance: "1.2 km", stock: ["Paracetamol", "Cough Syrup"] },
+      { name: "Green Pharmacy", distance: "2.5 km", stock: ["Ibuprofen"] }
+    ];
+
+    let currentSymptom = "";
+    let recognition;
+
+    function startRecognition() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("Speech recognition not supported in this browser.");
+        return;
+      }
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = "en-IN";
+      recognition.onresult = function(event) {
+        const symptom = event.results[0][0].transcript.toLowerCase();
+        document.getElementById("symptomText").innerText = "You said: " + symptom;
+        checkRemedy(symptom);
+      };
+      recognition.start();
+    }
+
+    function checkRemedy(symptom) {
+      currentSymptom = symptom;
+      let remedyCard = document.getElementById("remedyCard");
+      let remedyText = document.getElementById("remedyText");
+
+      if (symptom.includes("cough")) {
+        remedyText.innerText = remedies.cough.remedy;
+      } else if (symptom.includes("fever")) {
+        remedyText.innerText = remedies.fever.remedy;
+      } else if (symptom.includes("headache")) {
+        remedyText.innerText = remedies.headache.remedy;
+      } else {
+        remedyText.innerText = "No remedy found. Please consult a doctor.";
+      }
+
+      remedyCard.style.display = "block";
+      speak(remedyText.innerText);
+    }
+
+    function logDuration(days) {
+      if (days >= 3) {
+        showPharmacies();
+      } else {
+        alert("Continue remedy and monitor symptoms.");
+      }
+    }
+
+    function showPharmacies() {
+      const pharmacyCard = document.getElementById("pharmacyCard");
+      const medicineText = document.getElementById("medicineText");
+      const pharmacyList = document.getElementById("pharmacyList");
+
+      let med = "General Medicine";
+      if (currentSymptom.includes("cough")) med = remedies.cough.medicine;
+      else if (currentSymptom.includes("fever")) med = remedies.fever.medicine;
+      else if (currentSymptom.includes("headache")) med = remedies.headache.medicine;
+
+      medicineText.innerText = "Suggested medicine: " + med;
+
+      pharmacyList.innerHTML = "";
+      pharmacies.forEach(p => {
+        if (p.stock.includes(med)) {
+          let li = document.createElement("li");
+          li.innerText = `${p.name} - ${p.distance} (Available)`;
+          pharmacyList.appendChild(li);
+        }
+      });
+
+      pharmacyCard.style.display = "block";
+      speak(medicineText.innerText);
+    }
+
+    function speak(text) {
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.lang = "en-IN";
+      window.speechSynthesis.speak(msg);
+    }
+  </script>
+</body>
+</html>
